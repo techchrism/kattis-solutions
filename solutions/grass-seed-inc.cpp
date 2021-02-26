@@ -61,7 +61,7 @@ int main()
         cin >> x >> y;
         total += (x * y);
     }
-    cout << (total * c);
+    cout << fixed << (total * c);
 
     return 0;
 }
