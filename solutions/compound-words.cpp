@@ -55,26 +55,34 @@ int main()
     string part;
     while(getline(cin, part))
     {
-        cout << "Got part: " << part << "\n";
         istringstream iss(part);
         vector<string> results(istream_iterator<string>{iss},istream_iterator<string>());
         for(string res : results)
         {
             parts.PB(res);
         }
-
     }
     sort(parts.begin(), parts.end());
 
+    VS dup;
     for(int i = 0; i < parts.size(); i++)
     {
         for(int j = 0; j < parts.size(); j++)
         {
             if(i != j)
             {
-                cout << parts[i] << parts[j] << "\n";
+                dup.PB(parts[i]+parts[j]);
             }
         }
+    }
+    sort(dup.begin(), dup.end());
+    string last;
+    for(string s:dup)
+    {
+        if(s==last)
+            continue;
+        last=s;
+        cout<<s<<"\n";
     }
 
     return 0;

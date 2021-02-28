@@ -3,6 +3,8 @@ project(kattis_problems)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS "-Wall -g -std=gnu++17")
+set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "-static")
+
 
 add_executable(autori solutions/autori.cpp)
 add_executable(hello-world solutions/hello-world.cpp)
