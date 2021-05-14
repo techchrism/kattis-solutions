@@ -112,3 +112,4 @@ add_executable(racing-around-the-alphabet solutions/racing-around-the-alphabet.c
 add_executable(stopwatch solutions/stopwatch.cpp)
 add_executable(laptop-sticker solutions/laptop-sticker.cpp)
 add_executable(jumbo-javelin solutions/jumbo-javelin.cpp)
+add_executable(help-a-phd solutions/help-a-phd.cpp)
