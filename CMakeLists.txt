@@ -118,3 +118,4 @@ add_executable(estimating-the-area-of-a-circle solutions/estimating-the-area.cpp
 add_executable(beavergnaw solutions/beavergnaw.cpp)
 add_executable(rating-problems solutions/rating-problems.cpp)
 add_executable(magic-trick solutions/magic-trick.cpp)
+add_executable(a-real-challenge solutions/a-real-challenge.cpp)
