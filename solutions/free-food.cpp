@@ -1,4 +1,4 @@
-// Problem https://open.kattis.com/problems/gerrymandering
+// Problem https://open.kattis.com/problems/freefood
 #include <iostream>
 #include <string>
 #include <vector>
@@ -51,31 +51,17 @@ int main()
     cin.tie(nullptr);
     cout.tie(nullptr);
 
-    int p,d;
-    cin>>p>>d;
-    PII ds[d];
-    for(int i=0;i<p;i++){
-        int di,a,b;
-        cin>>di>>a>>b;
-        di--;
-        ds[di].first+=a;
-        ds[di].second+=b;
-    }
-    int wa=0,wb=0,t=0;
-    for(int i=0;i<d;i++){
-        int need=((ds[i].first+ds[i].second)/2)+1;
-        t+=ds[i].first+ds[i].second;
-        if(ds[i].first>ds[i].second){
-            cout<<"A "<<ds[i].first-need<<" "<<ds[i].second<<"\n";
-            wa+=ds[i].first-need;
-            wb+=ds[i].second;
-        }else{
-            cout<<"B "<<ds[i].first<<" "<<ds[i].second-need<<"\n";
-            wa+=ds[i].first;
-            wb+=ds[i].second-need;
+    int n;
+    cin>>n;
+    SETI d;
+    for(int i=0;i<n;i++){
+        int s,t;
+        cin>>s>>t;
+        for(int j=s;j<=t;j++){
+            d.insert(j);
         }
     }
-    cout<<fixed<<(abs(wa-wb)/(double)t);
+    cout<<d.size();
 
     return 0;
 }
