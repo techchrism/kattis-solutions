@@ -5,6 +5,7 @@
 // To restart press CTRL + C in terminal and run `gridsome develop`
 
 module.exports = {
-  siteName: 'Gridsome',
-  plugins: []
+    siteName: 'Kattis Solutions',
+    siteDescription: 'Solutions for problems on Kattis',
+    plugins: []
 }
