@@ -8,6 +8,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const crypto = require('crypto');
+const shellExec = require('shell-exec');
 
 const problemRegex = /^\/\/ Problem https:\/\/open\.kattis\.com\/problems\/(\w+?)\s*\n/;
 
@@ -63,7 +64,13 @@ module.exports = function(api) {
             oldSolutionsData = JSON.parse(await fs.readFile(path.join(previousBuildDir, 'solutions.json'), 'utf-8'));
         } catch(ignored) {}
         
-        // Copy over files
+        // Copy over source files
+        await Promise.all(solutionsData.map(async solution => {
+            try {
+                await fs.mkdir(path.join(srcFilePath, solution.problemID));
+            } catch(ignored) {}
+            await fs.copyFile(path.join(srcDir, solution.fileName), path.join(srcFilePath, solution.problemID, solution.fileName));
+        }));
         
         // Sort into new and removed items based on previous indexing json
         const existingItems = solutionsData.filter(srcData => {
@@ -74,6 +81,28 @@ module.exports = function(api) {
             return !existingItems.some(existingData => (srcData.problemID === existingData.problemID &&
                 existingData.hash === srcData.hash))
         });
+        
+        // Copy all existing items
+        await Promise.all(existingItems.map(async existingItem => {
+            await fs.copyFile(path.join(previousBuildDir, 'compiled', existingItem.problemID + '.wasm'), path.join(compiledPath, existingItem.problemID + '.wasm'));
+        }));
+        
+        // Compile all new items
+        for(const newItem of newItems) {
+            const fPath = path.resolve(path.join(srcDir, newItem.fileName));
+            const toPath = path.resolve(path.join(compiledPath, newItem.problemID + '.js'));
+            
+            console.log(`Compiling ${newItem.fileName}...`);
+            const cmdData = await shellExec(`emcc -O3 -g0 -flto --closure 1 -s EXIT_RUNTIME -s ENVIRONMENT=web ${fPath} -o ${toPath}`);
+            if(cmdData.stderr.length !== 0) {
+                console.warn(cmdData.stderr);
+            }
+            
+            // We don't need the JS file
+            try {
+                await fs.rm(toPath);
+            } catch(ignored) {}
+        }
     });
     
     api.loadSource(async ({addCollection}) => {

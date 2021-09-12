@@ -7,6 +7,7 @@
     "build": "gridsome build"
   },
   "dependencies": {
-    "gridsome": "^0.7.0"
+    "gridsome": "^0.7.0",
+    "shell-exec": "^1.0.2"
   }
 }
