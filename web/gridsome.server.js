@@ -35,15 +35,23 @@ async function parseSrcFile(filePath) {
 }
 
 const srcDir = path.join(__dirname, '..', 'solutions');
-const staticDir = path.join(__dirname, 'static');
-const solutionDataPath = path.join(staticDir, 'solutions.json');
+const previousBuildDir = path.join(__dirname, '..', '..', 'previous');
 
 module.exports = function(api) {
     
     api.afterBuild(async ({config}) => {
+        const solutionsCollection = api._store.getCollection('Solutions').collection;
+        const solutionsData = [...solutionsCollection.data];
+    
+        // Write file to static serve containing source meta
+        await fs.writeFile(path.join(config.outputDir, 'solutions.json'), JSON.stringify(solutionsData.map(solution => ({
+            hash: solution.hash,
+            problemID: solution.problemID,
+            fileName: solution.fileName
+        })), null, 4), 'utf-8');
+        
         const srcFilePath = path.join(config.outputDir, 'src');
         const compiledPath = path.join(config.outputDir, 'compiled');
-    
         await Promise.allSettled([
             fs.mkdir(srcFilePath),
             fs.mkdir(compiledPath)
@@ -52,18 +60,19 @@ module.exports = function(api) {
         // Old web assets from previous build
         let oldSolutionsData = [];
         try {
-            oldSolutionsData = JSON.parse(await fs.readFile(solutionDataPath, 'utf-8'));
+            oldSolutionsData = JSON.parse(await fs.readFile(path.join(previousBuildDir, 'solutions.json'), 'utf-8'));
         } catch(ignored) {}
         
         // Copy over files
         
         // Sort into new and removed items based on previous indexing json
-        const changedItems = solutionsData.filter(srcData => {
-            return !oldSolutionsData.some(oldData => (oldData.problemID === srcData.problemID &&
+        const existingItems = solutionsData.filter(srcData => {
+            return oldSolutionsData.some(oldData => (oldData.problemID === srcData.problemID &&
                 oldData.hash === srcData.hash))
         });
-        const removedItems = oldSolutionsData.filter(oldData => {
-            return !solutionsData.some(srcData => (srcData.problemID === oldData.problemID))
+        const newItems = solutionsData.filter(srcData => {
+            return !existingItems.some(existingData => (srcData.problemID === existingData.problemID &&
+                existingData.hash === srcData.hash))
         });
     });
     
@@ -78,9 +87,6 @@ module.exports = function(api) {
             srcData.fileName = fileName;
             return srcData;
         }))).filter(srcData => srcData !== null);
-        
-        // Write file to static serve containing source meta
-        await fs.writeFile(solutionDataPath, JSON.stringify(solutionsData, null, 4), 'utf-8');
         
         // Add solutions to collection
         const solutions = addCollection('Solutions');
