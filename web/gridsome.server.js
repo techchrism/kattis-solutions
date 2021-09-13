@@ -45,7 +45,11 @@ async function scrapeKattisProblem(problemID) {
     const pageText = await (await fetch(`https://open.kattis.com/problems/${problemID}`)).text();
     
     const problemTextMatch = pageText.match(problemTextRegex);
-    if(!problemTextMatch) return null;
+    if(!problemTextMatch) {
+        const errorMsg = `Kattis problem ${problemID} doesn't match body regex!`;
+        console.warn(errorMsg);
+        return {error: errorMsg};
+    }
     
     const samples = [];
     let sample = null;
@@ -132,7 +136,7 @@ module.exports = function(api) {
         });
         
         // Copy all existing items
-        await Promise.all(existingItems.map(async existingItem => {
+        await Promise.allSettled(existingItems.map(async existingItem => {
             await fs.copyFile(path.join(previousBuildDir, 'compiled', existingItem.problemID + '.wasm'), path.join(compiledPath, existingItem.problemID + '.wasm'));
         }));
         
