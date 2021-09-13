@@ -80,25 +80,37 @@ module.exports = function(api) {
     api.afterBuild(async ({config}) => {
         const solutionsCollection = api._store.getCollection('Solutions').collection;
         const solutionsData = [...solutionsCollection.data];
+        
+        const srcFilePath = path.join(config.outputDir, 'src');
+        const compiledPath = path.join(config.outputDir, 'compiled');
+        const apiPath = path.join(config.outputDir, 'api');
+        await Promise.allSettled([
+            fs.mkdir(srcFilePath),
+            fs.mkdir(compiledPath),
+            fs.mkdir(apiPath)
+        ]);
     
         // Write file to static serve containing source meta
-        await fs.writeFile(path.join(config.outputDir, 'solutions.json'), JSON.stringify(solutionsData.map(solution => ({
+        await fs.writeFile(path.join(apiPath, 'solutions.json'), JSON.stringify(solutionsData.map(solution => ({
             hash: solution.hash,
             problemID: solution.problemID,
             fileName: solution.fileName
         })), null, 4), 'utf-8');
         
-        const srcFilePath = path.join(config.outputDir, 'src');
-        const compiledPath = path.join(config.outputDir, 'compiled');
-        await Promise.allSettled([
-            fs.mkdir(srcFilePath),
-            fs.mkdir(compiledPath)
-        ]);
+        try {
+            await fs.mkdir(path.join(apiPath, 'problems'));
+        } catch(ignored) {}
+        
+        // Write out Kattis problem data
+        await Promise.all(solutionsData.map(async solution => {
+            if(!solution.kattisData) return;
+            await fs.writeFile(path.join(apiPath, 'problems', solution.problemID + '.json'), JSON.stringify(solution.kattisData, null, 4));
+        }));
     
         // Old web assets from previous build
         let oldSolutionsData = [];
         try {
-            oldSolutionsData = JSON.parse(await fs.readFile(path.join(previousBuildDir, 'solutions.json'), 'utf-8'));
+            oldSolutionsData = JSON.parse(await fs.readFile(path.join(previousBuildDir, 'api', 'solutions.json'), 'utf-8'));
         } catch(ignored) {}
         
         // Copy over source files
@@ -153,6 +165,18 @@ module.exports = function(api) {
             srcData.fileName = fileName;
             return srcData;
         }))).filter(srcData => srcData !== null);
+        
+        // Load Kattis problem data
+        for(const solutionData of solutionsData) {
+            try {
+                // Try loading from existing source
+                solutionData.kattisData = JSON.parse(await fs.readFile(path.join(previousBuildDir, 'api', 'problems', solutionData.problemID + '.json'), 'utf-8'));
+            } catch(e) {
+                // If that fails, load it from Kattis
+                console.log(`Requesting data from Kattis for problem ${solutionData.problemID}`);
+                solutionData.kattisData = await scrapeKattisProblem(solutionData.problemID);
+            }
+        }
         
         // Add solutions to collection
         const solutions = addCollection('Solutions');
