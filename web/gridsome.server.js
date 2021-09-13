@@ -9,8 +9,14 @@ const fs = require('fs').promises;
 const path = require('path');
 const crypto = require('crypto');
 const shellExec = require('shell-exec');
+const fetch = require('node-fetch');
+const cheerio = require('cheerio');
 
 const problemRegex = /^\/\/ Problem https:\/\/open\.kattis\.com\/problems\/(\w+?)\s*\n/;
+const problemTextRegex = /<div class="problembody">(?<body>[\s\S]*?)<table class="sample" summary="sample data">/;
+const problemIDRegex = /<strong>Problem ID:\s*<\/strong>\s*(.+?)<\/p>/;
+const cpuTimeRegex = /<strong>CPU Time limit:\s*<\/strong>\s*(.+?)<\/p>/;
+const difficultyRegex = /<strong>Difficulty:\s*<\/strong><span>(.+?)<\/span>/;
 
 async function parseSrcFile(filePath) {
     const fileBuffer = await fs.readFile(filePath);
@@ -33,6 +39,37 @@ async function parseSrcFile(filePath) {
         problemID,
         fileText
     };
+}
+
+async function scrapeKattisProblem(problemID) {
+    const pageText = await (await fetch(`https://open.kattis.com/problems/${problemID}`)).text();
+    
+    const problemTextMatch = pageText.match(problemTextRegex);
+    if(!problemTextMatch) return null;
+    
+    const samples = [];
+    let sample = null;
+    const $ = cheerio.load(pageText);
+    $('.sample pre').each(function(i, elem) {
+        if(sample === null) {
+            sample = {
+                input: $(this).text()
+            };
+        } else {
+            sample.output = $(this).text();
+            samples.push(sample);
+            sample = null;
+        }
+    });
+    
+    return {
+        title: $('.problem-headline').text().trim(),
+        samples,
+        problemText: problemTextMatch.groups['body'],
+        problemID: pageText.match(problemIDRegex)[1],
+        cpuTime: pageText.match(cpuTimeRegex)[1],
+        difficulty: pageText.match(difficultyRegex)[1]
+    }
 }
 
 const srcDir = path.join(__dirname, '..', 'solutions');
