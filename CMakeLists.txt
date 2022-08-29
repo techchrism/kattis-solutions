@@ -243,3 +243,4 @@ add_executable(this-aint-your-grandpas-checkerboard solutions/this-aint-your-gra
 add_executable(yin-and-yang-stones solutions/yin-and-yang-stones.cpp)
 add_executable(the-plank solutions/the-plank.cpp)
 add_executable(booking-a-room solutions/booking-a-room.cpp)
+add_executable(broken-swords solutions/broken-swords.cpp)
